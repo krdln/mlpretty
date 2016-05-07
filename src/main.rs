@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::io::prelude::*;
 use std::io;
-use std::iter::repeat;
+use std::iter::{once,repeat};
 use std::env;
 use std::process;
 
@@ -92,6 +92,7 @@ fn do_it(reader: &mut BufRead) {
                              io::BufReader::new(file)
                                 .lines()
                                 .map(|x| x.unwrap_or_else(|_| "".into()))
+                                .chain(once("<END OF FILE>".into()))
                                 .collect()
                         )
                         .unwrap_or_else(|_| vec![])
@@ -121,7 +122,7 @@ fn do_it(reader: &mut BufRead) {
             // The snippet
             for i in i_row.. {
                 let rownum = format!("{}|", i);
-                let row = &file[i - 1];
+                let row = &file.get(i - 1).map_or("<NO SUCH LINE>", |s| s.as_str());
 
                 println!("{}{}", rownum.cyan(), color_keywords(&keywords_r, row));
 
