@@ -46,6 +46,36 @@ fn main() {
     }
 }
 
+fn print_line<'a, F>(
+        file: &'a[String], row: usize, span: Option<(Option<usize>, usize)>,
+        colorize: F, keywords_r: &Regex) -> &'a str
+where F: Fn(&str) -> colored::ColoredString
+{
+    let rownum = format!("{}| ", row);
+    let line = &file.get(row - 1).map_or("<NO SUCH LINE>", |s| s.as_str());
+
+    println!("{}{}", rownum.cyan(), color_keywords(keywords_r, line));
+
+    if let Some((start, end)) = span {
+        // Print underline
+
+        let start = start.unwrap_or_else(||
+            line.chars().take_while(|c| c.is_whitespace()).count());
+
+        for _ in 0..rownum.len() { print!(" ") }
+        // print!("{}", "|".cyan());
+        for c in line[..start].chars() {
+            if c.is_whitespace() { print!("{}", c) }
+            else { print!(" ") }
+        }
+
+        let underline_len = std::cmp::min(end, line.len()) - start;
+        println!("{}", colorize(&repeat('~').take(underline_len).collect::<String>()));
+    }
+
+    line
+}
+
 fn do_it(reader: &mut BufRead) {
     let location_r = Regex::new(r#"^File "(.*)", line (\d+), characters (\d+)-(\d+):$"#).unwrap();
     let command_r = Regex::new(r"ocaml.* -I .* -o .*|^ocamldep.*\.mli? >|^ocamlbuild -package").unwrap();
@@ -119,29 +149,32 @@ fn do_it(reader: &mut BufRead) {
             }
             println!("");
 
-            // The snippet
-            for i in i_row.. {
-                let rownum = format!("{}|", i);
-                let row = &file.get(i - 1).map_or("<NO SUCH LINE>", |s| s.as_str());
-
-                println!("{}{}", rownum.cyan(), color_keywords(&keywords_r, row));
-
-                let col_start =
-                    if i == i_row { col_start }
-                    else { row.chars().take_while(|c| c.is_whitespace()).count() };
-
-                for _ in 0..rownum.len() { print!(" ") }
-                // print!("{}", "|".cyan());
-                for c in row[..col_start].chars() {
-                    if c.is_whitespace() { print!("{}", c) }
-                    else { print!(" ") }
+            // The snippet.
+            if file.get(i_row - 1).map_or(false, |l|
+                    l.chars().take_while(|c| c.is_whitespace()).count() == col_start) {
+                // If the error is on the beginning of line,
+                // print also the first non-empty line before.
+                let mut start = None;
+                for i in (0..i_row - 1).rev() {
+                    start = Some(i);
+                    if file[i].trim() != "" { break; }
                 }
+                if let Some(start) = start {
+                    for i in start..i_row - 1 {
+                        print_line(file, i + 1, None, &colorize, &keywords_r);
+                    }
+                }
+            }
 
-                let underline_len = std::cmp::min(col_end, row.len()) - col_start;
-                println!("{}", colorize(&repeat('~').take(underline_len).collect::<String>()));
+            for i in i_row.. {
+                let len = print_line(
+                        file, i,
+                        Some((if i == i_row { Some(col_start) } else { None }, col_end)),
+                        &colorize, &keywords_r)
+                    .len();
 
-                if col_end <= row.len() { break }
-                else { col_end -= row.len() + 1 }
+                if col_end <= len { break }
+                else { col_end -= len + 1 }
             }
 
         } else if command_r.is_match(&line) {
