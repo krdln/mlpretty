@@ -79,7 +79,7 @@ where F: Fn(&str) -> colored::ColoredString
 fn do_it(reader: &mut BufRead) {
     let location_r = Regex::new(r#"^File "(.*)", line (\d+), characters (\d+)-(\d+):$"#).unwrap();
     let command_r = Regex::new(r"ocaml.* -I .* -o .*|^ocamldep.*\.mli? >|^ocamlbuild -package").unwrap();
-    let val_r = Regex::new(r"^((?:let |val )?)(.+?) : (.+?) =(.*)$").unwrap();
+    let val_r = Regex::new(r"^((?:let |val )?)(.+?) : (.+?)( =.*$|$)").unwrap();
     let type_r = Regex::new(r"^type (.+?) =(.*)$").unwrap();
     let word_r = Regex::new(r"^\w+").unwrap();
     let keywords_r = Regex::new(r"\b(let|in|match|with|for|do|done|if|then|else|begin|end|rec|when|and|or|val)\b").unwrap();
@@ -191,7 +191,7 @@ fn do_it(reader: &mut BufRead) {
                 println!("");
                 inside = false;
             }
-            println!("{}{} : {} ={}", captures[1].bold(), &captures[2], captures[3].cyan(), &captures[4]);
+            println!("{}{} : {}{}", captures[1].bold(), &captures[2], captures[3].cyan(), &captures[4]);
 
         } else if let Some(captures) = type_r.captures(&line) {
             // Handle type declarations
