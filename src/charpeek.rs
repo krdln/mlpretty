@@ -44,10 +44,14 @@ impl<R: BufRead> Charpeek<R> {
 
     pub fn next_line(&mut self) -> Option<String> {
         let mut line = String::new();
-        {
-            let peek = self.peek.as_ref().map_or(&[] as &[u8], |x| x);
-            otry!( peek.chain(&mut self.reader).read_line(&mut line).ok() );
-        }
+        // Chain doesn't implement BufRead in Rust 1.8.
+        // {
+        //     let peek = self.peek.as_ref().map_or(&[] as &[u8], |x| x);
+        //     otry!( peek.chain(&mut self.reader).read_line(&mut line).ok() );
+        // }
+        // The following WAR is incorrect for non-ascii first char (unlikely)
+        line.extend(self.peek.map(|p| p[0] as char));
+        otry!( self.reader.read_line(&mut line).ok() );
         if line.len() == 0 { return None; }
         self.peek = None;
         let tru_len = line.trim_right().len();
