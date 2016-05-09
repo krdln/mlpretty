@@ -93,13 +93,18 @@ fn do_it(reader: &mut BufRead) {
 
     while let Some(byte) = lines.peek_byte() {
         // Handle prompt (we want to flush it immediately)
-        if byte == b'#' || (byte as char).is_whitespace() {
-            if byte == b'#' {
-                print!("\n{}", "λ".green().bold());
-                lines.flush_peek(io::sink());
+        if byte == b'#' {
+            lines.flush_peek(&mut io::sink());
+            if lines.peek_byte() == Some(b' ') {
+                lines.flush_peek(&mut io::sink());
+                print!("\n{} ", "λ".green().bold());
+                let _ = io::stdout().flush();
             } else {
-                lines.flush_peek(&mut io::stdout());
+                print!("#");
             }
+            continue;
+        } else if (byte as char).is_whitespace() {
+            lines.flush_peek(&mut io::stdout());
             continue;
         }
 
