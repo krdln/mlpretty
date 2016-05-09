@@ -1,11 +1,11 @@
 # mlpretty
 
-Prettyfier for [Ocaml](https://ocaml.org/) error messages.
+Prettifier for [Ocaml](https://ocaml.org/) error messages.
 
 *mlpretty* changes the appearance of the error (and warning) messages,
 by showing the offending line, underlining the span and adding some nice colors.
 The message format is inspired by [Elm](http://elm-lang.org/)
-([Compilers as assistants](http://elm-lang.org/blog/compilers-as-assistants)).
+(see [Compilers as Assistants](http://elm-lang.org/blog/compilers-as-assistants)).
 
 ## Example
 
